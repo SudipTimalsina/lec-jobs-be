@@ -2,13 +2,14 @@ const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const { type } =require("os");
 
 const app = express();
 
 app.use(cors());
 
 const PORT = 5000;
-
+// connection string
 const mongoDbURI = "mongodb://localhost:27017/lec";
 mongoose.connect(mongoDbURI, {
   useNewUrlParser: true,
@@ -30,13 +31,13 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", userSchema);
-User.createCollection()
-  .then((col) => {
-    console.log("Collection", col, "Created");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+// User.createCollection()
+//   .then((col) => {
+//     console.log("Collection", col, "Created");
+//   })
+//   .catch((err) => {
+//     console.log(err);
+//   });
 
 
 // trying out to do the same for the post section
@@ -57,13 +58,14 @@ const postSchema = new mongoose.Schema({
   comments: [{ type: String }],
 });
 const Post = mongoose.model("Post", postSchema);
-User.createCollection()
-  .then((col) => {
-    console.log("Collection", col, "Created");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+// User.createCollection()
+//   .then((col) => {
+//     console.log("Collection", col, "Created");
+//   })
+//   .catch((err) => {
+//     console.log(err);
+//   });
+
 // Post.create({
 //   title: "Python Developer Required",
 //   description: "For a client project Python Developer is required",
@@ -84,11 +86,6 @@ User.createCollection()
 // });
 
 
-
-
-
-
-
 app.get("/", (req, res) => {
   res.status(200).send("This is response from BE");
 });
@@ -100,14 +97,20 @@ app.get("/api/v1/posts", (req, res) => {
 });
 
 app.get("/api/v1/user", async (req, res) => {
-  const user = await User.find({id: 1})
+  const user = await User.find({id: 1});
   // const user = fs.readFileSync("./data/user.json", "utf-8").toString();
   res.status(200).send(user[0]);
 });
 
+app.post("/api/v1/user", async (req, resp) => {
+  const lastUser = await User.findOne({}, null, { sort: { id: -1 } });
 
-app.post("/api/v1/user", (req , resp)=>{
-  const id = req.query.id;
+  let id = 1;
+  if (lastUser) {
+    id = lastUser.id + 1;
+  }
+// app.post("/api/v1/user", (req , resp)=>{
+//   const id = req.query.id;
   const newUser = {
   email: "test@test.com",
   username: "sudip",
