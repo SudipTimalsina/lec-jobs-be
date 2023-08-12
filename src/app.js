@@ -3,11 +3,12 @@ const fs = require("fs");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const { type } =require("os");
+const bodyParser = require("body-parser");
 
 const app = express();
 
 app.use(cors());
-
+app.use(bodyParser.json());
 const PORT = 5000;
 // connection string
 const mongoDbURI = "mongodb://localhost:27017/lec";
@@ -18,7 +19,8 @@ mongoose.connect(mongoDbURI, {
 
 const userSchema = new mongoose.Schema({
   email: String,
-  username: String,
+  username: {type: String, unique: true},
+  password: String,
   fullname: String,
   title: String,
   skills: [{ type: String }],
@@ -58,13 +60,7 @@ const postSchema = new mongoose.Schema({
   comments: [{ type: String }],
 });
 const Post = mongoose.model("Post", postSchema);
-// User.createCollection()
-//   .then((col) => {
-//     console.log("Collection", col, "Created");
-//   })
-//   .catch((err) => {
-//     console.log(err);
-//   });
+
 
 // Post.create({
 //   title: "Python Developer Required",
@@ -102,8 +98,30 @@ app.get("/api/v1/user", async (req, res) => {
   res.status(200).send(user[0]);
 });
 
+// login API
+app.post("/api/v1/login", async (req, res) => {
+  const user = await User.findOne({
+    username: req.body.username,
+    password: req.body.password,
+    is_active: true,
+  });
+  if (user) {
+    res.status(200).send({ message: "Login successfull", data: user });
+  } else {
+    res.status(400).send({ error: "Invalid username or password" });
+  }
+});
+
+
 app.post("/api/v1/user", async (req, resp) => {
   const lastUser = await User.findOne({}, null, { sort: { id: -1 } });
+
+  const {username, email, fullname, title, job_type, skills, address, password } = req.body;
+
+  const usernameUser = await User.findOne({username});
+  if(usernameUser){
+    return resp.status(400).send({error : "Username Already Taken"})
+  }  
 
   let id = 1;
   if (lastUser) {
@@ -111,15 +129,19 @@ app.post("/api/v1/user", async (req, resp) => {
   }
 // app.post("/api/v1/user", (req , resp)=>{
 //   const id = req.query.id;
+// trying in class(no elec)
+
+
   const newUser = {
-  email: "test@test.com",
-  username: "sudip",
-  fullname: "Sudip Timalsina",
-  title: "Software Developer",
-  skills: ["JS", "PHP", "JAVA"],
-  address: "Kathmandu, Nepal",
-  job_type: "Full Time",
-  id: id,
+  email,
+  password,
+  username,
+  fullname,
+  title,
+  skills,
+  address,
+  job_type,
+  id,
   is_active: true,
   followers: [],
   followings: [],
@@ -127,9 +149,26 @@ app.post("/api/v1/user", async (req, resp) => {
   User.create(newUser).then((createdUser) => {
     console.log("User Created");
     resp.status(200).send(createdUser);
-  });
-})
+  })
+  .catch((err) =>{
+    console.error(err);
+    resp.status(500).send({error : "Cannot process your request"})
+  }); 
+});
 
 app.listen(PORT, () => {
   console.log("App is Running on port " + PORT);
 });
+
+
+
+
+
+// Was used after the const post = mongoess model
+//1. User.createCollection()
+//     .then((col) => {
+//       console.log("Collection", col, "Created");
+//    })
+//    .catch((err) => {
+//       console.log(err);
+//    });
